@@ -1,5 +1,5 @@
 #
-#务必确保上游Adguardhome和猫咪打开以后再启用
+#务必确保上游Adguardhome(3053)和猫咪(7874)打开以后再启用
 #
 log:
   level: info

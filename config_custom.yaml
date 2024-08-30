@@ -10,14 +10,14 @@ plugins:
       files:
         - "/var/mosdns/geosite_gfw.txt"
         
-   # Greylist
+  # Greylist
   - tag: greylist
     type: domain_set
     args:
       files:
         - "/etc/mosdns/rule/greylist.txt"
         
-   # Whitelist
+  # Whitelist
   - tag: whitelist
     type: domain_set
     args:
@@ -58,21 +58,20 @@ plugins:
       - matches: has_resp
         exec: accept
 
-
   # 查询国内域名
   - tag: query_is_local_domain
     type: sequence
     args:
       - exec: $local_sequence
  
- #Whitelist
+  # Whitelist
   - tag: query_is_whitelist
     type: sequence
     args:
       - matches: qname $whitelist
         exec: $local_sequence
       
-   # gfw
+  # gfw
   - tag: query_is_gfw
     type: sequence
     args:

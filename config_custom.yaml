@@ -1,0 +1,115 @@
+log:
+  level: info
+  file: "/var/log/mosdns.log"
+
+plugins:
+  # GFW
+  - tag: gfw
+    type: domain_set
+    args:
+      files:
+        - "/var/mosdns/geosite_gfw.txt"
+        
+   # Greylist
+  - tag: greylist
+    type: domain_set
+    args:
+      files:
+        - "/etc/mosdns/rule/greylist.txt"
+        
+   # Whitelist
+  - tag: whitelist
+    type: domain_set
+    args:
+      files:
+        - "/etc/mosdns/rule/whitelist.txt"
+
+  # 转发至本地服务器
+  - tag: forward_local
+    type: forward
+    args:
+      upstreams:
+        - addr: 127.0.0.1:3053
+
+  # 转发至远程服务器
+  - tag: forward_remote
+    type: forward
+    args:
+      upstreams:
+        - addr: 127.0.0.1:7874
+
+  # 国内解析
+  - tag: local_sequence
+    type: sequence
+    args:
+      - exec: $forward_local
+
+  # 国外解析
+  - tag: remote_sequence
+    type: sequence
+    args:
+      - exec: prefer_ipv4
+      - exec: $forward_remote
+
+  # 有响应终止返回
+  - tag: has_resp_sequence
+    type: sequence
+    args:
+      - matches: has_resp
+        exec: accept
+
+
+  # 查询国内域名
+  - tag: query_is_local_domain
+    type: sequence
+    args:
+      - exec: $local_sequence
+ 
+ #Whitelist
+  - tag: query_is_whitelist
+    type: sequence
+    args:
+      - matches: qname $whitelist
+        exec: $local_sequence
+      
+   # gfw
+  - tag: query_is_gfw
+    type: sequence
+    args:
+      - matches: qname $gfw
+        exec: $remote_sequence
+        
+  - tag: query_is_greylist
+    type: sequence
+    args:
+      - matches: qname $greylist
+        exec: $remote_sequence
+
+  # 主要的运行逻辑插件
+  # sequence 插件中调用的插件 tag 必须在 sequence 前定义，
+  # 否则 sequence 找不到对应插件。
+  - tag: main_sequence
+    type: sequence
+    args:
+      - exec: $query_is_whitelist
+      - exec: jump has_resp_sequence
+      - exec: $query_is_greylist
+      - exec: jump has_resp_sequence
+      - exec: $query_is_gfw
+      - exec: jump has_resp_sequence
+      - exec: $query_is_local_domain
+      - exec: jump has_resp_sequence
+
+  # 启动 udp 服务器。
+  - tag: udp_server
+    type: udp_server
+    args:
+      entry: main_sequence
+      listen: ":5335"
+
+  # 启动 tcp 服务器。
+  - tag: tcp_server
+    type: tcp_server
+    args:
+      entry: main_sequence
+      listen: ":5335"

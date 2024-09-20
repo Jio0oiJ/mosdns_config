@@ -2,8 +2,8 @@
 #务必确保上游Adguardhome:3053和猫咪:7874打开以后再启用
 #
 log:
-  level: info
-  file: "/var/log/mosdns.log"
+  level: error
+  file: "/tmp/log/mosdns.log"
 
 plugins:
   # GFW
